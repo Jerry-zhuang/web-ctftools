@@ -1,0 +1,2 @@
+php_value pcre.backtrack_limit 0
+php_value pcre.jit 0

